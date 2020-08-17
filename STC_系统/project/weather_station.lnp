@@ -1,0 +1,20 @@
+".\main.obj",
+".\bin.obj",
+".\delay.obj",
+".\iic.obj",
+".\interrupt.obj",
+".\flash.obj",
+".\huanjing.obj",
+".\touch_main.obj",
+".\chuankou.obj",
+".\setphone.obj",
+".\sendmessage.obj",
+".\zhuce.obj",
+".\init.obj",
+".\font.obj",
+".\fontcheck.obj",
+".\tft.obj",
+".\touch.obj",
+".\txt.obj" 
+TO "weather_station" 
+RAMSIZE(256) 

@@ -1,0 +1,373 @@
+C51 COMPILER V9.01   SETPHONE                                                              06/19/2020 12:28:53 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE SETPHONE
+OBJECT MODULE PLACED IN .\setphone.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\hardware\setphone\setphone.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(..
+                    -\hardware\setphone;..\hardware\flash;..\hardware\huanjing;..\hardware\sendmessage;..\hardware\touch_main;..\main;..\syst
+                    -em\bin;..\system\delay;..\system\iic;..\system\interrupt;..\system\stc;..\tft_touch_sd\font;..\tft_touch_sd\touch;..\tft
+                    -_touch_sd\tft;..\tft_touch_sd\txt;..\hardware\chuankou;..\hardware\zhuce;..\hardware\init) DEBUG OBJECTEXTEND PRINT(.\se
+                    -tphone.lst) TABS(2) OBJECT(.\setphone.obj)
+
+line level    source
+
+   1          #include "STC15F2K60S2.h"
+   2          #include "tft.h"
+   3          #include "txt.h"
+   4          #include "touch.h"
+   5          #include "string.h"
+   6          #include "setphone.h"
+   7          #include "font.h"
+   8          /**
+   9            setphone.c功能
+  10            电话设置
+  11          */
+  12          #define BUTTON_COLOR 0x3CDA
+  13          #define BUTTON_EDGE_COLOR 0x226E
+  14          #define BUTTON_FONT_COLOR WHITE
+  15          #define BUTTON_ON_COLOR 0x33D4
+  16          #define BACK_COLOR 0x659B
+  17          
+  18          unsigned char inputNumber = 0;
+  19          unsigned char PhoneNumber[12] = "12345678901";
+  20          unsigned char num = 0;
+  21          unsigned char ShowNumber[] = "0";
+  22          void SetPhoneMFrame(void)
+  23          {
+  24   1        TFT_ClearArea(0, 16, 240, 320, BACK_COLOR);
+  25   1        //  TFT_ClearONELINE(19, BLUE);
+  26   1        //  TFT_ShowString_W25(0, 19,  "主界面", WHITE, RED);
+  27   1        LCD_DrawRectangle(17, 20, 222, 70, BUTTON_EDGE_COLOR); //显示号码
+  28   1        LCD_DrawBox(18, 21, 204, 49, WHITE);
+  29   1      
+  30   1        LCD_DrawRectangle(17, 80, 72, 130, BUTTON_EDGE_COLOR);   //数字一
+  31   1        LCD_DrawRectangle(92, 80, 147, 130, BUTTON_EDGE_COLOR);  //数字二
+  32   1        LCD_DrawRectangle(167, 80, 222, 130, BUTTON_EDGE_COLOR); //数字三
+  33   1      
+  34   1        LCD_DrawRectangle(17, 140, 72, 190, BUTTON_EDGE_COLOR);   //数字四
+  35   1        LCD_DrawRectangle(92, 140, 147, 190, BUTTON_EDGE_COLOR);  //数字五
+  36   1        LCD_DrawRectangle(167, 140, 222, 190, BUTTON_EDGE_COLOR); //数字六
+  37   1      
+  38   1        LCD_DrawRectangle(17, 200, 72, 250, BUTTON_EDGE_COLOR);   //数字七
+  39   1        LCD_DrawRectangle(92, 200, 147, 250, BUTTON_EDGE_COLOR);  //数字八
+  40   1        LCD_DrawRectangle(167, 200, 222, 250, BUTTON_EDGE_COLOR); //数字九
+  41   1      
+  42   1        LCD_DrawRectangle(17, 260, 72, 310, BUTTON_EDGE_COLOR);   //删除
+  43   1        LCD_DrawRectangle(92, 260, 147, 310, BUTTON_EDGE_COLOR);  //数字零
+  44   1        LCD_DrawRectangle(167, 260, 222, 310, BUTTON_EDGE_COLOR); //确定
+  45   1      
+  46   1        LCD_DrawBox(18, 81, 54, 49, BUTTON_COLOR);   //数字一
+  47   1        LCD_DrawBox(93, 81, 54, 49, BUTTON_COLOR);   //数字二
+  48   1        LCD_DrawBox(168, 81, 54, 49, BUTTON_COLOR); //数字三
+  49   1      
+  50   1        LCD_DrawBox(18, 141, 54, 49, BUTTON_COLOR);   //数字四
+  51   1        LCD_DrawBox(93, 141, 54, 49, BUTTON_COLOR);  //数字五
+C51 COMPILER V9.01   SETPHONE                                                              06/19/2020 12:28:53 PAGE 2   
+
+  52   1        LCD_DrawBox(168, 141, 54, 49, BUTTON_COLOR); //数字六
+  53   1      
+  54   1        LCD_DrawBox(18, 201, 54, 49, BUTTON_COLOR);   //数字七
+  55   1        LCD_DrawBox(93, 201, 54, 49, BUTTON_COLOR);  //数字八
+  56   1        LCD_DrawBox(168, 201, 54, 49, BUTTON_COLOR); //数字九
+  57   1      
+  58   1        LCD_DrawBox(18, 261, 54, 49, BUTTON_COLOR);   //删除
+  59   1        LCD_DrawBox(93, 261, 54, 49, BUTTON_COLOR);  //数字零
+  60   1        LCD_DrawBox(168, 261, 54, 49, BUTTON_COLOR); //确定
+  61   1      
+  62   1      
+  63   1        TFT_ShowString(5, 2, PhoneNumber, BLACK, WHITE);
+  64   1      
+  65   1        TFT_ShowString(5, 6, "1", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  66   1        TFT_ShowString(14, 6, "2", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  67   1        TFT_ShowString(24, 6, "3", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  68   1      
+  69   1        TFT_ShowString(5, 10, "4", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  70   1        TFT_ShowString(14, 10, "5", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  71   1        TFT_ShowString(24, 10, "6", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  72   1      
+  73   1        TFT_ShowString(5, 14, "7", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  74   1        TFT_ShowString(14, 14, "8", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  75   1        TFT_ShowString(24, 14, "9", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  76   1      
+  77   1        TFT_ShowString(4, 17, "Del", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  78   1        TFT_ShowString(14, 17, "0", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  79   1        TFT_ShowString(22, 17, "Enter", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  80   1      }
+  81          
+  82          void SetPhoneTouch(void)
+  83          {
+  84   1        num = 0;
+  85   1        SetPhoneMFrame();
+  86   1        while (1)
+  87   1        {
+  88   2          TFT_ShowString(5, 2, PhoneNumber, BLACK, WHITE);
+  89   2          ShowNumber[0] = PhoneNumber[num];
+  90   2          TFT_ShowString(5 + num, 2, ShowNumber, WHITE, BLUE);
+  91   2          while (1)
+  92   2          {
+  93   3            if (!Touch_IRQ())
+  94   3            {
+  95   4              if (Convert_Pos()) //得到坐标值
+  96   4              {
+  97   5                inputNumber = 0;
+  98   5                if (tp_pixlcd.y > 80 && tp_pixlcd.y < 130) //第一排 (80:80+50)
+  99   5                {
+ 100   6                  if (tp_pixlcd.x > 17 && tp_pixlcd.x < 72) //数字一(17:17+55)
+ 101   6                  {
+ 102   7                    inputNumber = 1;
+ 103   7                  }
+ 104   6                  else if (tp_pixlcd.x > 92 && tp_pixlcd.x < 147) //数字二(92:92+55)
+ 105   6                  {
+ 106   7                    inputNumber = 2;
+ 107   7                  }
+ 108   6                  else if (tp_pixlcd.x > 167 && tp_pixlcd.x < 222) //数字三(167:167+55)
+ 109   6                  {
+ 110   7                    inputNumber = 3;
+ 111   7                  }
+ 112   6                }
+ 113   5                else if (tp_pixlcd.y > 140 && tp_pixlcd.y < 190) //第二排 (140:140+50)
+C51 COMPILER V9.01   SETPHONE                                                              06/19/2020 12:28:53 PAGE 3   
+
+ 114   5                {
+ 115   6                  if (tp_pixlcd.x > 17 && tp_pixlcd.x < 72) //数字四(17:17+55)
+ 116   6                  {
+ 117   7                    inputNumber = 4;
+ 118   7                  }
+ 119   6                  else if (tp_pixlcd.x > 92 && tp_pixlcd.x < 147) //数字五(92:92+55)
+ 120   6                  {
+ 121   7                    inputNumber = 5;
+ 122   7                  }
+ 123   6                  else if (tp_pixlcd.x > 167 && tp_pixlcd.x < 222) //数字六(167:167+55)
+ 124   6                  {
+ 125   7                    inputNumber = 6;
+ 126   7                  }
+ 127   6                }
+ 128   5                else if (tp_pixlcd.y > 200 && tp_pixlcd.y < 250) //第三排 (200:200+50)
+ 129   5                {
+ 130   6                  if (tp_pixlcd.x > 17 && tp_pixlcd.x < 72) //数字四(17:17+55)
+ 131   6                  {
+ 132   7                    inputNumber = 7;
+ 133   7                  }
+ 134   6                  else if (tp_pixlcd.x > 92 && tp_pixlcd.x < 147) //数字五(92:92+55)
+ 135   6                  {
+ 136   7                    inputNumber = 8;
+ 137   7                  }
+ 138   6                  else if (tp_pixlcd.x > 167 && tp_pixlcd.x < 222) //数字六(167:167+55)
+ 139   6                  {
+ 140   7                    inputNumber = 9;
+ 141   7                  }
+ 142   6                }
+ 143   5                else if (tp_pixlcd.y > 260 && tp_pixlcd.y < 310) //第四排 (260:260+50)
+ 144   5                {
+ 145   6                  if (tp_pixlcd.x > 17 && tp_pixlcd.x < 72) //数字四(17:17+55)
+ 146   6                  {
+ 147   7                    inputNumber = 10;
+ 148   7                  }
+ 149   6                  else if (tp_pixlcd.x > 92 && tp_pixlcd.x < 147) //数字五(92:92+55)
+ 150   6                  {
+ 151   7                    inputNumber = 11;
+ 152   7                  }
+ 153   6                  else if (tp_pixlcd.x > 167 && tp_pixlcd.x < 222) //数字六(167:167+55)
+ 154   6                  {
+ 155   7                    inputNumber = 12;
+ 156   7                  }
+ 157   6                }
+ 158   5                if (inputNumber == 1)
+ 159   5                {
+ 160   6                  LCD_DrawBox(18, 81, 54, 49, BUTTON_ON_COLOR);
+ 161   6                  TFT_ShowString(5, 6, "1", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 162   6                  break;
+ 163   6                }
+ 164   5                else if (inputNumber == 2)
+ 165   5                {
+ 166   6                  LCD_DrawBox(93, 81, 54, 49, BUTTON_ON_COLOR);
+ 167   6                  TFT_ShowString(14, 6, "2", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 168   6                  break;
+ 169   6                }
+ 170   5                else if (inputNumber == 3)
+ 171   5                {
+ 172   6                  LCD_DrawBox(168, 81, 54, 49, BUTTON_ON_COLOR);
+ 173   6                  TFT_ShowString(24, 6, "3", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 174   6                  break;
+ 175   6                }
+C51 COMPILER V9.01   SETPHONE                                                              06/19/2020 12:28:53 PAGE 4   
+
+ 176   5                else if (inputNumber == 4)
+ 177   5                {
+ 178   6                  LCD_DrawBox(18, 141, 54, 49, BUTTON_ON_COLOR);
+ 179   6                  TFT_ShowString(5, 10, "4", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 180   6                  break;
+ 181   6                }
+ 182   5                else if (inputNumber == 5)
+ 183   5                {
+ 184   6                  LCD_DrawBox(93, 141, 54, 49, BUTTON_ON_COLOR);
+ 185   6                  TFT_ShowString(14, 10, "5", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 186   6                  break;
+ 187   6                }
+ 188   5                else if (inputNumber == 6)
+ 189   5                {
+ 190   6                  LCD_DrawBox(168, 141, 54, 49, BUTTON_ON_COLOR);
+ 191   6                  TFT_ShowString(24, 10, "6", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 192   6                  break;
+ 193   6                }
+ 194   5                else if (inputNumber == 7)
+ 195   5                {
+ 196   6                  LCD_DrawBox(18, 201, 54, 49, BUTTON_ON_COLOR);
+ 197   6                  TFT_ShowString(5, 14, "7", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 198   6                  break;
+ 199   6                }
+ 200   5                else if (inputNumber == 8)
+ 201   5                {
+ 202   6                  LCD_DrawBox(93, 201, 54, 49, BUTTON_ON_COLOR);
+ 203   6                  TFT_ShowString(14, 14, "8", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 204   6                  break;
+ 205   6                }
+ 206   5                else if (inputNumber == 9)
+ 207   5                {
+ 208   6                  LCD_DrawBox(168, 201, 54, 49, BUTTON_ON_COLOR);
+ 209   6                  TFT_ShowString(24, 14, "9", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 210   6                  break;
+ 211   6                }
+ 212   5                else if (inputNumber == 10)
+ 213   5                {
+ 214   6                  LCD_DrawBox(18, 261, 54, 49, BUTTON_ON_COLOR);
+ 215   6                  TFT_ShowString(4, 17, "Del", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 216   6                  break;
+ 217   6                }
+ 218   5                else if (inputNumber == 11)
+ 219   5                {
+ 220   6                  LCD_DrawBox(93, 261, 54, 49, BUTTON_ON_COLOR);
+ 221   6                  TFT_ShowString(14, 17, "0", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 222   6                  break;
+ 223   6                }
+ 224   5                else if (inputNumber == 12)
+ 225   5                {
+ 226   6                  LCD_DrawBox(168, 261, 54, 49, BUTTON_ON_COLOR);
+ 227   6                  TFT_ShowString(22, 17, "Enter", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 228   6                  break;
+ 229   6                }
+ 230   5              }
+ 231   4            }
+ 232   3          }
+ 233   2          while (!Touch_IRQ())
+ 234   2            ; //等待触摸松开
+ 235   2      
+ 236   2          switch (inputNumber)
+ 237   2          {
+C51 COMPILER V9.01   SETPHONE                                                              06/19/2020 12:28:53 PAGE 5   
+
+ 238   3          case 1:
+ 239   3          {
+ 240   4            PhoneNumber[num] = '1';
+ 241   4            //*(PhoneNumber + Number) = '1';
+ 242   4            LCD_DrawBox(18, 81, 54, 49, BUTTON_COLOR);
+ 243   4            TFT_ShowString(5, 6, "1", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 244   4            break;
+ 245   4          }
+ 246   3          case 2:
+ 247   3          {
+ 248   4            PhoneNumber[num] = '2';
+ 249   4            //*(PhoneNumber + Number) = '2';
+ 250   4            LCD_DrawBox(93, 81, 54, 49, BUTTON_COLOR);
+ 251   4            TFT_ShowString(14, 6, "2", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 252   4            break;
+ 253   4          }
+ 254   3          case 3:
+ 255   3          {
+ 256   4            PhoneNumber[num] = '3';
+ 257   4            //*(PhoneNumber + Number) = '3';
+ 258   4            LCD_DrawBox(168, 81, 54, 49, BUTTON_COLOR);
+ 259   4            TFT_ShowString(24, 6, "3", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 260   4            break;
+ 261   4          }
+ 262   3          case 4:
+ 263   3          {
+ 264   4            PhoneNumber[num] = '4';
+ 265   4            //*(PhoneNumber + Number) = '4';
+ 266   4            LCD_DrawBox(18, 141, 54, 49, BUTTON_COLOR);
+ 267   4            TFT_ShowString(5, 10, "4", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 268   4            break;
+ 269   4          }
+ 270   3          case 5:
+ 271   3          {
+ 272   4            PhoneNumber[num] = '5';
+ 273   4            //*(PhoneNumber + Number) = '5';
+ 274   4            LCD_DrawBox(93, 141, 54, 49, BUTTON_COLOR);
+ 275   4            TFT_ShowString(14, 10, "5", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 276   4            break;
+ 277   4          }
+ 278   3          case 6:
+ 279   3          {
+ 280   4            PhoneNumber[num] = '6';
+ 281   4            //*(PhoneNumber + Number) = '6';
+ 282   4            LCD_DrawBox(168, 141, 54, 49, BUTTON_COLOR);
+ 283   4            TFT_ShowString(24, 10, "6", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 284   4            break;
+ 285   4          }
+ 286   3          case 7:
+ 287   3          {
+ 288   4            PhoneNumber[num] = '7';
+ 289   4            //*(PhoneNumber + Number) = '7';
+ 290   4            LCD_DrawBox(18, 201, 54, 49, BUTTON_COLOR);
+ 291   4            TFT_ShowString(5, 14, "7", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 292   4            break;
+ 293   4          }
+ 294   3          case 8:
+ 295   3          {
+ 296   4            PhoneNumber[num] = '8';
+ 297   4            //*(PhoneNumber + Number) = '8';
+ 298   4            LCD_DrawBox(93, 201, 54, 49, BUTTON_COLOR);
+ 299   4            TFT_ShowString(14, 14, "8", BUTTON_FONT_COLOR, BUTTON_COLOR);
+C51 COMPILER V9.01   SETPHONE                                                              06/19/2020 12:28:53 PAGE 6   
+
+ 300   4            break;
+ 301   4          }
+ 302   3          case 9:
+ 303   3          {
+ 304   4            PhoneNumber[num] = '9';
+ 305   4            //*(PhoneNumber + Number) = '9';
+ 306   4            LCD_DrawBox(168, 201, 54, 49, BUTTON_COLOR);
+ 307   4            TFT_ShowString(24, 14, "9", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 308   4            break;
+ 309   4          }
+ 310   3          case 10:
+ 311   3          {
+ 312   4            if (num > 0)
+ 313   4              num--;
+ 314   4              LCD_DrawBox(18, 261, 54, 49, BUTTON_COLOR);
+ 315   4            TFT_ShowString(4, 17, "Del", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 316   4            break;
+ 317   4          }
+ 318   3          case 11:
+ 319   3          {
+ 320   4            PhoneNumber[num] = '0';
+ 321   4            //*(PhoneNumber + Number) = '0';
+ 322   4            LCD_DrawBox(93, 261, 54, 49, BUTTON_COLOR);
+ 323   4            TFT_ShowString(14, 17, "0", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 324   4            break;
+ 325   4          }
+ 326   3          case 12:
+ 327   3          {
+ 328   4            //PhoneNumber[num] = '\0';
+ 329   4            return;
+ 330   4            break;
+ 331   4          }
+ 332   3          }
+ 333   2          if (((0 < inputNumber && inputNumber < 10) || inputNumber == 11) && num < 10)
+ 334   2            num++;
+ 335   2        }
+ 336   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3766    ----
+   CONSTANT SIZE    =     30    ----
+   XDATA SIZE       =     16    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

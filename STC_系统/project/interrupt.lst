@@ -1,0 +1,73 @@
+C51 COMPILER V9.01   INTERRUPT                                                             06/19/2020 12:28:51 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE INTERRUPT
+OBJECT MODULE PLACED IN .\interrupt.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\system\interrupt\interrupt.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(..
+                    -\hardware\setphone;..\hardware\flash;..\hardware\huanjing;..\hardware\sendmessage;..\hardware\touch_main;..\main;..\syst
+                    -em\bin;..\system\delay;..\system\iic;..\system\interrupt;..\system\stc;..\tft_touch_sd\font;..\tft_touch_sd\touch;..\tft
+                    -_touch_sd\tft;..\tft_touch_sd\txt;..\hardware\chuankou;..\hardware\zhuce;..\hardware\init) DEBUG OBJECTEXTEND PRINT(.\in
+                    -terrupt.lst) TABS(2) OBJECT(.\interrupt.obj)
+
+line level    source
+
+   1          #include "STC15F2K60S2.h"
+   2          #include "interrupt.h"
+   3          volatile unsigned char CountNumber;
+   4          
+   5          /*extern */unsigned char BEEPON;
+   6          /*
+   7          void Time0_Init1MS(void) // T0,T1计数器默认为12分频（33.1776MCPU）即0.3617us  在AUXR寄存器高2为配置  
+   8          {
+   9             TMOD |= 0X01;    //MODEL1 16位定时计数器 ,计数器计满溢出时间23.7ms
+  10             TL0=(65536-2764)%256;
+  11               TH0=(65536-2764)/256;   //定时时长2764*0.3617us=20ms;  定时1s需要CountNumber=50次
+  12             ET0 =1;          //使能t1中断
+  13               //TR0=1;
+  14             EA=1;
+  15          }
+  16          */
+  17          void Time1_Init20MS(void) // T0,T1计数器默认为12分频（33.1776MCPU）即0.3617us  在AUXR寄存器高2为配置  
+  18          {
+  19   1         TMOD |= 0X10;    //MODEL1 16位定时计数器 ,计数器计满溢出时间23.7ms
+  20   1         TL1=(65536-55296)%256;
+  21   1           TH1=(65536-55296)/256;   //初始值10240,定时时长55296*0.3617us=20ms;  定时1s需要CountNumber=50次
+  22   1         ET1 =1;          //使能t1中断
+  23   1           //TR1=1;
+  24   1         EA=1;
+  25   1      }
+  26          
+  27          
+  28          
+  29          /***********************************************************************/
+  30          void Time0_IsrMS() interrupt 1     //定时20ms,详见Time1_Init()
+  31          {
+  32   1        TL0=(65536-2764)%256;
+  33   1        TH0=(65536-2764)/256; 
+  34   1        if(BEEPON==1)   P42=~P42;
+  35   1      } 
+  36          /***********************************************************************/
+  37          void Time1_Isr20MS() interrupt 3     //定时20ms,详见Time1_Init()
+  38          {
+  39   1      //  TR1=0;
+  40   1        TL1=15536%256;
+  41   1        TH1=15536/256; 
+  42   1        CountNumber++; 
+  43   1       //   TR1=1;
+  44   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     71    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2    ----
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.01   INTERRUPT                                                             06/19/2020 12:28:51 PAGE 2   
+
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

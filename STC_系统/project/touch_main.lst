@@ -1,0 +1,141 @@
+C51 COMPILER V9.01   TOUCH_MAIN                                                            06/19/2020 12:28:52 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE TOUCH_MAIN
+OBJECT MODULE PLACED IN .\touch_main.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\hardware\touch_main\touch_main.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDI
+                    -R(..\hardware\setphone;..\hardware\flash;..\hardware\huanjing;..\hardware\sendmessage;..\hardware\touch_main;..\main;..\
+                    -system\bin;..\system\delay;..\system\iic;..\system\interrupt;..\system\stc;..\tft_touch_sd\font;..\tft_touch_sd\touch;..
+                    -\tft_touch_sd\tft;..\tft_touch_sd\txt;..\hardware\chuankou;..\hardware\zhuce;..\hardware\init) DEBUG OBJECTEXTEND PRINT(
+                    -.\touch_main.lst) TABS(2) OBJECT(.\touch_main.obj)
+
+line level    source
+
+   1          #include <stdio.h>
+   2          #include "tft.h"
+   3          #include "bin.h"
+   4          #include "txt.h"
+   5          #include "touch.h"
+   6          #include "touch_main.h"
+   7          #include "sendmessage.h"
+   8          #include "setphone.h"
+   9          #include "huanjing.h"
+  10          
+  11          #define BACK_COLOR 0x659B
+  12          #define ICON_FONT_COLOR BLACK
+  13          #define ICON_FONT_BACK_COLOR WHITE
+  14          #define ICON_FONT_ON_COLOR BLUE
+  15          
+  16          
+  17          unsigned char TouchNumber = 0;
+  18          
+  19          /************************ 界面显示框架***********************/
+  20          void MainFrame(void)
+  21          {
+  22   1        TFT_ClearONELINE(0, 0x1A0F);
+  23   1        TFT_ShowString(0, 0, "CPU:STC15W4K48S4", WHITE, 0x1A0F);
+  24   1        TFT_ShowString_W25(20, 0, 2, "简易气象站", WHITE, 0x1A0F);
+  25   1        TFT_ClearArea(0, 16, 240, 320 - 16, BACK_COLOR);
+  26   1        //显示图标 及 图标对应功能语句
+  27   1        TFT_ShowString_W25(2, 7, 2, "短信发送", ICON_FONT_COLOR, ICON_FONT_BACK_COLOR);
+  28   1        TFT_ShowString_W25(11, 7, 2, "环境监测", ICON_FONT_COLOR, ICON_FONT_BACK_COLOR);
+  29   1        TFT_ShowString_W25(20, 7, 2, "电话设定", ICON_FONT_COLOR, ICON_FONT_BACK_COLOR);
+  30   1      
+  31   1      
+  32   1        //打开和显示主界面3个图片
+  33   1      
+  34   1        DISP_BIN_PT_W25(17, 50, 55, 55, 0x615000, 0x617F44);  //(45,50)
+  35   1        DISP_BIN_PT_W25(92, 50, 55, 55, 0x621000, 0x623F44);  //(140,50)
+  36   1        DISP_BIN_PT_W25(167, 50, 55, 55, 0x61F000, 0x621F44); //(140,50)
+  37   1      
+  38   1      
+  39   1        TFT_ShowString_W25(2, 13, 2, "当前设定的电话号码为:", BLACK, BACK_COLOR);
+  40   1        TFT_ShowString(8, 14, PhoneNumber, BLACK, BACK_COLOR);
+  41   1      }
+  42          
+  43          /************************ 触控功能***********************/ // USART1_Init();USART2_Init();
+  44          
+  45          void MainTouch(void)
+  46          {
+  47   1        MainFrame();
+  48   1        while (1)
+  49   1        {
+  50   2          if (!Touch_IRQ())
+  51   2          {
+C51 COMPILER V9.01   TOUCH_MAIN                                                            06/19/2020 12:28:52 PAGE 2   
+
+  52   3            if (Convert_Pos()) //得到坐标值
+  53   3            {
+  54   4              TouchNumber = 0;
+  55   4              if (tp_pixlcd.y > 50 && tp_pixlcd.y < 105) //第一排 (30:30+55)
+  56   4              {
+  57   5                if (tp_pixlcd.x > 17 && tp_pixlcd.x < 72) //图一(17:17+55)
+  58   5                {
+  59   6                  TouchNumber = 1;
+  60   6                }
+  61   5                else if (tp_pixlcd.x > 92 && tp_pixlcd.x < 147) //图二(92:92+55)
+  62   5                {
+  63   6                  TouchNumber = 2;
+  64   6                }
+  65   5                else if (tp_pixlcd.x > 167 && tp_pixlcd.x < 222) //图三(167:167+55)
+  66   5                {
+  67   6                  TouchNumber = 3;
+  68   6                }
+  69   5              }
+  70   4              if (TouchNumber == 1)
+  71   4              {
+  72   5                TFT_ShowString_W25(2, 7, 2, "短信发送", WHITE, ICON_FONT_ON_COLOR);
+  73   5                break;
+  74   5              }
+  75   4              else if (TouchNumber == 2)
+  76   4              {
+  77   5                TFT_ShowString_W25(11, 7, 2, "环境监测", WHITE, ICON_FONT_ON_COLOR);
+  78   5                break;
+  79   5              }
+  80   4              else if (TouchNumber == 3)
+  81   4              {
+  82   5                TFT_ShowString_W25(20, 7, 2, "电话设定", WHITE, ICON_FONT_ON_COLOR);
+  83   5                break;
+  84   5              }
+  85   4            }
+  86   3          }
+  87   2        }
+  88   1      
+  89   1        while (!Touch_IRQ())
+  90   1          ; //等待触摸松开
+  91   1      
+  92   1        switch (TouchNumber)
+  93   1        {
+  94   2        case 1:
+  95   2        {
+  96   3          SendMessageTouch();//短信发送
+  97   3          break;
+  98   3        }
+  99   2        case 2:
+ 100   2        {
+ 101   3          HuanjJiancTouch();//环境监测
+ 102   3          break;
+ 103   3        }
+ 104   2        case 3:
+ 105   2        {
+ 106   3          SetPhoneTouch();//电话设定
+ 107   3          break;
+ 108   3        }
+ 109   2        }
+ 110   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.01   TOUCH_MAIN                                                            06/19/2020 12:28:52 PAGE 3   
+
+   CODE SIZE        =    745    ----
+   CONSTANT SIZE    =     77    ----
+   XDATA SIZE       =      1    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,305 @@
+C51 COMPILER V9.01   TXT                                                                   06/19/2020 12:28:56 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE TXT
+OBJECT MODULE PLACED IN .\txt.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\tft_touch_sd\txt\txt.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(..\hardw
+                    -are\setphone;..\hardware\flash;..\hardware\huanjing;..\hardware\sendmessage;..\hardware\touch_main;..\main;..\system\bin
+                    -;..\system\delay;..\system\iic;..\system\interrupt;..\system\stc;..\tft_touch_sd\font;..\tft_touch_sd\touch;..\tft_touch
+                    -_sd\tft;..\tft_touch_sd\txt;..\hardware\chuankou;..\hardware\zhuce;..\hardware\init) DEBUG OBJECTEXTEND PRINT(.\txt.lst)
+                    - TABS(2) OBJECT(.\txt.obj)
+
+line level    source
+
+   1          #include "string.h"
+   2          #include "STC15F2K60S2.h"
+   3          #include "txt.h"
+   4          #include "tft.h"
+   5          #include "font.h"
+   6          #include "delay.h"
+   7          #include "flash.h"
+   8          #include "fontcheck.h"
+   9          
+  10          extern unsigned char Y_LEN; //È«¾Ö±äÁ¿ÓÃÓÚÏûÏ¢Ò»Ö±ÍùÏÂ´òÓ¡
+  11          
+  12          void TFT_ShowWord_W25(unsigned int x, unsigned int y, unsigned int size_x, unsigned int size_y, unsigned c
+             -har *Disp_char, unsigned int PColor, unsigned int BColor)
+  13          {
+  14   1        unsigned int i, j, xCount = 0;
+  15   1        unsigned int pxSize;
+  16   1        TFT_AddressSet(x, y, x + size_x - 1, y + size_y - 1);  //ÉèÖÃÇøÓò
+  17   1        pxSize = (size_x / 8 + (size_x % 8 ? 1 : 0)) * size_y; //µ¥¸ö×Ö·ûµÄÊý×é¸öÊý
+  18   1      
+  19   1        for (j = 0; j < pxSize; j++) //size_x*size_y/8Îª×Ö½Ú¸öÊý
+  20   1        {
+  21   2          for (i = 0; i < 8; i++) //¸ßÎ»ÔÚÇ°£¬µÍÎ»ÔÚºó£¬È¡×ÖÄ£Ê±Æ¥Åä¾ÍOK
+  22   2          {
+  23   3            if (*Disp_char & (0x80 >> i)) //×î¸ßÎ»Îª×óÒÆ7Î»
+  24   3            {
+  25   4              //¶ÔÓ¦ÓÚÈ¡×ÖÄ£Ê±µÄÒõÂë
+  26   4              TFT_WR_DATA(PColor);
+  27   4            }
+  28   3            else
+  29   3            {
+  30   4              TFT_WR_DATA(BColor);
+  31   4            }
+  32   3            ++xCount;
+  33   3            if (xCount % size_x == 0)
+  34   3            {
+  35   4              xCount = 0;
+  36   4              break;
+  37   4            } //¶ÔÓÚ×Ö·û¿í²»ÊÇ8±¶ÊýµÄ×Ö·û
+  38   3          }
+  39   2          Disp_char++;
+  40   2        }
+  41   1      }
+  42          /**
+  43          **size²ÎÊý¿ÉÑ¡1¡¢2¡¢3¡¢4£¬ÆäÓàÊýÖµÎÞÐ§
+  44          **/
+  45          void TFT_ShowString_W25(unsigned int x, unsigned int y, unsigned int size, unsigned char *ptr, unsigned in
+             -t PenColor, unsigned int BackColor)
+  46          {
+  47   1        unsigned char i, val = 0; //Ò»¶¨Òª³õÊ¼»¯£¬²»È»xlenÔÚµÚ¶þ´Îµ÷ÓÃÊ±»áÓÐÎÊÌâ
+  48   1      
+  49   1        unsigned char temp[2] = {0};
+C51 COMPILER V9.01   TXT                                                                   06/19/2020 12:28:56 PAGE 2   
+
+  50   1        unsigned int xlen;
+  51   1        unsigned int ylen;
+  52   1        unsigned int max_ylen;
+  53   1        unsigned int max_xlen;
+  54   1        unsigned long pxSize = 0, px; //Êý×é¸öÊý
+  55   1        unsigned long position = 0;
+  56   1        unsigned char p[129] = {0}; //32*32ºº×Ö4*32=128¸ö×Ö½Ú
+  57   1        unsigned char p0[65] = {0};
+  58   1      
+  59   1        if (size == 1)
+  60   1          px = 12;
+  61   1        else if (size == 2)
+  62   1          px = 16;
+  63   1        else if (size == 3)
+  64   1          px = 24;
+  65   1        else if (size == 4)
+  66   1          px = 32;
+  67   1        else
+  68   1          return;
+  69   1      
+  70   1        max_xlen = 240 * 2 / px;
+  71   1        max_ylen = 320 / px; //×î¶àÏÔÊ¾240/8=30ÁÐ 320/16=20ÐÐ
+  72   1      
+  73   1        for (i = 0; i < strlen(ptr); i++)
+  74   1        {
+  75   2          temp[0] = ptr[i];
+  76   2          temp[1] = ptr[i + 1];
+  77   2      
+  78   2          xlen = (x + i + val) % max_xlen;
+  79   2          ylen = ((x + i + val) / max_xlen + y) % max_ylen;
+  80   2      
+  81   2          if (temp[0] < 128) //ÎªASCIIÂë
+  82   2          {
+  83   3            pxSize = (px / 16 + (px % 16 ? 1 : 0)) * px; //µ¥¸ö×Ö·ûµÄÊý×é¸öÊý      ?????
+  84   3            position = (unsigned long)temp[0] * (unsigned long)pxSize;
+  85   3            if (px == 12)
+  86   3            {
+  87   4              Spi_PageRead(p, ftinfo.asc12_addr + position, pxSize);
+  88   4            }
+  89   3            else if (px == 16)
+  90   3            {
+  91   4              Spi_PageRead(p, ftinfo.asc16_addr + position, pxSize);
+  92   4            }
+  93   3            else if (px == 24)
+  94   3            {
+  95   4              Spi_PageRead(p, ftinfo.asc24_addr + position, pxSize);
+  96   4            }
+  97   3            else if (px == 32)
+  98   3            {
+  99   4              Spi_PageRead(p, ftinfo.asc32_addr + position, pxSize);
+ 100   4            }
+ 101   3            TFT_ShowWord_W25(xlen * px / 2, ylen * px, px / 2, px, p, PenColor, BackColor);
+ 102   3          }
+ 103   2          else //Îªºº×Ö
+ 104   2          {
+ 105   3            if (xlen == max_xlen - 1) //×îºóÒ»ÁÐ²»ÄÜ·ÅÏÂÒ»¸öºº×Ö
+ 106   3            {
+ 107   4              TFT_ShowWord_W25(xlen * px / 2, ylen * px, px / 2, px, p0, PenColor, BackColor); //ÏÔÊ¾¡° ¡±¿Õ°×Ìî²¹
+ 108   4              val++;
+ 109   4              i--; //Ö¸Õë»¹ÊÇÖ¸ÏòÔ­ºº×Ö,ËùÒÔÒª¼õÒ»
+ 110   4            }
+ 111   3            else
+C51 COMPILER V9.01   TXT                                                                   06/19/2020 12:28:56 PAGE 3   
+
+ 112   3            {                        //µÚÒ»¸öºº×ÖGBK±àÂë·¶Î§Îª0x81~0xFE
+ 113   4                                     //µÚ¶þ¸öºº×ÖGBK±àÂë·¶Î§Îª0x40~0x7E 0x80~0xFE
+ 114   4              pxSize = (px / 8 + (px % 8 ? 1 : 0)) * px; //µ¥¸ö×Ö·ûµÄÊý×é¸öÊý     ??????????????
+ 115   4              if (temp[1] > 0x7F)
+ 116   4                position = ((unsigned long)(temp[0] - 0x81) * 190 + (unsigned long)temp[1] - 0x41) * pxSize;
+ 117   4              else if (temp[1] < 0x7F)
+ 118   4                position = (((unsigned long)temp[0] - 0x81) * 190 + (unsigned long)temp[1] - 0x40) * pxSize;
+ 119   4              else
+ 120   4                return;
+ 121   4      
+ 122   4              if (px == 12)
+ 123   4              {
+ 124   5                Spi_PageRead(p, ftinfo.gbk12_addr + position, pxSize);
+ 125   5              }
+ 126   4              else if (px == 16)
+ 127   4              {
+ 128   5                Spi_PageRead(p, ftinfo.gbk16_addr + position, pxSize);
+ 129   5              }
+ 130   4              else if (px == 24)
+ 131   4              {
+ 132   5                Spi_PageRead(p, ftinfo.gbk24_addr + position, pxSize);
+ 133   5              }
+ 134   4              else if (px == 32)
+ 135   4              {
+ 136   5                Spi_PageRead(p, ftinfo.gbk32_addr + position, pxSize);
+ 137   5              }
+ 138   4      
+ 139   4              TFT_ShowWord_W25(xlen * px / 2, ylen * px, px, px, p, PenColor, BackColor);
+ 140   4              i++;
+ 141   4            }
+ 142   3          }
+ 143   2        }
+ 144   1        Y_LEN = ylen + 1; //¼ÇÂ¼ÏÂÓÃµ½µÄÐÐÊý+ÏÂÒ»ÐÐ
+ 145   1        Y_LEN %= max_ylen;
+ 146   1      }
+ 147          
+ 148          ///*********************************************************************
+ 149          //Ãû³ÆTXTµÄºËÐÄ³ÌÐò
+ 150          //ÃèÊö:ÎÄ¼þµÄ¿ªÊ¼´ØºÅ£¬´óÐ¡£¬ÎÄ¼þÃû£¬ÕâÐ©ÊÇÖØÒªÊý¾Ý
+ 151          //¹¦ÄÜ:
+ 152          //·µ»ØÖµ:
+ 153          //ÊäÈëÖµ:TXTÎÄ¼þÊý¾Ý
+ 154          //*********************************************************************/
+ 155          //void DISP_TXT(unsigned char cjd)
+ 156          //{
+ 157          //  unsigned long Temp_ClusL,new_Sec;
+ 158          //
+ 159          //  unsigned int i,j=0;
+ 160          //  unsigned long total=0;
+ 161          //  unsigned char tmp_char[2],CHINA_FLAG=0;
+ 162          //  unsigned char x=0,y=0;
+ 163          //  unsigned char max_x=30,max_y=20;//×î¶àÏÔÊ¾240/8=30ÁÐ 320/16=20ÐÐ
+ 164          //  TFT_ShowString_SD(0,19,"                        ÏÂÒ»Ò³",WHITE,RED);
+ 165          //  y=1;
+ 166          //  Temp_ClusL= doc_info.DOC_FstClusL[cjd];//½«Ê×´Ø¸³Öµ
+ 167          //  while(Temp_ClusL!=0x0fffffff)//Ò»Ö±µ½×îºóÒ»´Ø
+ 168          //  {
+ 169          //    new_Sec=Cluster_to_Sector(Temp_ClusL);      //Ëã´ØºÅµÄÊ×ÉÈÇø  =(Ä³´ØºÅ-¸ùÄ¿Â¼´ØºÅ)*Ã¿´ØÉÈÇøÊý+¸ùÄ¿Â¼¿ªÊ
+             -¼ÉÈÇøºÅ
+ 170          //    for(i=0;i<fat_info.BPB_perCluster_Sector_number;i++)//²éÃ¿´ØµÄËùÓÐÉÈÇø
+ 171          //    {
+ 172          //                   //* ¶ÁÒ»ÉÈÇøÄÚÈÝ
+C51 COMPILER V9.01   TXT                                                                   06/19/2020 12:28:56 PAGE 4   
+
+ 173          //        SD_read_sector(new_Sec,buffer);
+ 174          //      while(j<512)
+ 175          //      {
+ 176          //          //* Èç¹ûÏÔÊ¾ÍêÎÄ¼þ¾ÍÍË³ö
+ 177          //        total++;
+ 178          //            if(total>doc_info.DOC_Filesize[cjd])
+ 179          //        {
+ 180          //          TFT_ShowString_SD(0,19,"                          ·µ»Ø",WHITE,RED);
+ 181          //                    while(1)
+ 182          //          {
+ 183          //                      if(Convert_Pos()) //µÃµ½×ø±êÖµ
+ 184          //            {
+ 185          //              if(tp_pixlcd.x>208&&tp_pixlcd.y>298)    //ÏÂ±êÇ©À¸"·µ»Ø"
+ 186          //                return;
+ 187          //            }
+ 188          //          }
+ 189          //        }
+ 190          //         //*»Ø³µÅÐ¶Ïº¯Êý  º¯ÊýÀïÖ»ÉèÖÃÁË ¿ÉÒÔÁ¬ÐøÅÐ¶Ï3¸ö»Ø³µ
+ 191          //             //Èç¹ûÊÇASCIIÂë
+ 192          //            if(buffer[j] < 0x80)
+ 193          //                {
+ 194          //                     if(buffer[j]==0x0d&&j==511) break;     //ÅÐ¶Ï»Ø³µµÄÁ½¸ö×Ö½ÚÊÇ·ñÔÚÁ½¸ö ÉÈÇøµÄ½ÓºÏÖ®´¦
+ 195          //             if(buffer[j]==0x0a&&j==0){j++;y++;x=0;}  //ÕâÑù¿ÉÄÜ»áÓÐ¶ª×Ö½ÚÏÖÏó
+ 196          //
+ 197          //            if((buffer[j]==0x0d)&&(buffer[j+1]==0x0a))    //ÅÐ¶ÏÊÇ·ñÓÐ»Ø³µ
+ 198          //             {
+ 199          //               j=j+2;                  //×Ö½Ú+2 Ìø¹ý´Ë»Ø³µÊý¾Ý
+ 200          //               y++;                  // »»ÐÐ
+ 201          //                x=0;                   //´ÓµÚÒ»¸öÏÔÊ¾Î»ÖÃ¿ªÊ¼ÏÔÊ¾
+ 202          //               }
+ 203          //            else                     //ÏÔÊ¾×Ö½Ú
+ 204          //              {
+ 205          //
+ 206          //          TFT_ShowWord(x*8,y*16,8,16,ASCII_816[buffer[j]-0x20],BLACK,WHITE);
+ 207          //                    j++;
+ 208          //                    x++;
+ 209          //               // Èç¹ûÏÔÂúÒ»ÐÐ
+ 210          //                    if(x >= max_x)
+ 211          //                    {
+ 212          //                      x = 0;
+ 213          //                        y ++;
+ 214          //                    }
+ 215          //          }
+ 216          //        }
+ 217          //               //Èç¹ûÊÇºº×Ö/
+ 218          //            else //   CHINA_FLAG ÓÃ´Ëº¯Êý×ö±êÖ¾ À´ÅÐ¶ÏÊÇ·ñÎªÕû¸ö×Ö
+ 219          //            { //Ö»ÓÐÎªÕû¸ö×Ö²Å¿ÉÒÔËÍÏÔÊ¾  ÕâÑù¿ÉÒÔ±ÜÃâ´íÐÐ
+ 220          //          if(!CHINA_FLAG)
+ 221          //                  {
+ 222          //                     //ºº×ÖµÄ×ó°ë±ßÖ»¼ÇÂ¼Êý¾Ý£¬²»ÏÔÊ¾
+ 223          //                        tmp_char[0] = buffer[j];
+ 224          //                          //Èç¹ûÏÔÂúÒ»ÐÐ
+ 225          //                        if(x >= max_x-1)
+ 226          //                        {
+ 227          //                            x = 0;
+ 228          //                            y ++;
+ 229          //                        }
+ 230          //                        j++;
+ 231          //                        CHINA_FLAG = 1;
+ 232          //                }
+ 233          //                    else if(CHINA_FLAG)
+ 234          //          {      //¶ÁÍêºº×ÖµÄÓÒ°ë±ß²¢ÏÔÊ¾
+C51 COMPILER V9.01   TXT                                                                   06/19/2020 12:28:56 PAGE 5   
+
+ 235          //                        tmp_char[1] = buffer[j];
+ 236          //            //¶Á×ÖÄ£
+ 237          //            // ÏÔÊ¾³öÀ´
+ 238          //            TFT_ShowWord_SD(x*8,y*16,tmp_char,BLACK,WHITE);
+ 239          //                        j++;
+ 240          //                        x += 2;
+ 241          //                        CHINA_FLAG = 0;
+ 242          //          }
+ 243          //        }
+ 244          //          //ÏÔÊ¾³¬³ö19ÐÐ¾ÍÍ£×¡µÈ°´¼üÏÔÊ¾ÏÂÒ»ÆÁ
+ 245          //        if(y >= max_y-1)
+ 246          //                {
+ 247          //                    while(1)
+ 248          //          {
+ 249          //                      if(Convert_Pos()) //µÃµ½×ø±êÖµ
+ 250          //            {
+ 251          //              if(tp_pixlcd.x>192&&tp_pixlcd.y>298) //ÏÂÒ»Ò³
+ 252          //              {
+ 253          //                TFT_ClearArea(0,16,240,320-32,WHITE); //Çå¿ÕÏÔÊ¾Çø
+ 254          //                        y = 1;
+ 255          //                break;
+ 256          //              }
+ 257          //            }
+ 258          //          }
+ 259          //        }
+ 260          //      }
+ 261          //      j=0;
+ 262          //      new_Sec++;
+ 263          //    }
+ 264          //    Temp_ClusL=FAT_seek_nextCluster(Temp_ClusL);//ÔÚFAT±íÖÐ²éÕÒÏÂÒ»¸ö´ØºÅ
+ 265          //  }
+ 266          //
+ 267          //}
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2653    ----
+   CONSTANT SIZE    =    196    ----
+   XDATA SIZE       =   ----     254
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

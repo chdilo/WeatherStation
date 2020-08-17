@@ -1,0 +1,137 @@
+C51 COMPILER V9.01   CHUANKOU                                                              06/19/2020 12:28:52 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE CHUANKOU
+OBJECT MODULE PLACED IN .\chuankou.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\hardware\chuankou\chuankou.c LARGE OPTIMIZE(7,SPEED) BROWSE INCDIR(..
+                    -\hardware\setphone;..\hardware\flash;..\hardware\huanjing;..\hardware\sendmessage;..\hardware\touch_main;..\main;..\syst
+                    -em\bin;..\system\delay;..\system\iic;..\system\interrupt;..\system\stc;..\tft_touch_sd\font;..\tft_touch_sd\touch;..\tft
+                    -_touch_sd\tft;..\tft_touch_sd\txt;..\hardware\chuankou;..\hardware\zhuce;..\hardware\init) DEBUG OBJECTEXTEND PRINT(.\ch
+                    -uankou.lst) TABS(2) OBJECT(.\chuankou.obj)
+
+line level    source
+
+   1          #include "STC15F2K60S2.h"
+   2          #include "string.h"
+   3          #include "chuankou.h"
+   4          
+   5          /**
+   6            chuankou.c¹¦ÄÜ
+   7            ´®¿Ú1£ºZIGBEE,P14(À©Õ¹zigbeeÀ¶ÑÀÄ£¿é)
+   8            ´®¿Ú2£º´®¿Úwifi-esp8266,max3232,OBD
+   9          */
+  10          
+  11          //´®¿Ú2
+  12          sbit CK_TXD = P1 ^ 0; //ÊäÈë
+  13          sbit CK_RXD = P1 ^ 1;
+  14          //´®¿Ú1
+  15          sbit UTXD = P3 ^ 0; //ÊäÈë
+  16          sbit URXD = P3 ^ 1;
+  17          //bit cktflg1 = 0, cktflg2 = 0;
+  18          //unsigned char CKShowXNum1 = 2, CKShowYNum1 = 6, CKShowXNum2 = 16, CKShowYNum2 = 6; //´®¿ÚÏÔÊ¾ÇøÓòµÄ³õÊ¼Î
+             -»ÖÃ
+  19          
+  20          volatile unsigned char GetFlag1 = 0, GetFlag2 = 0, GetFlag3 = 0;
+  21          volatile unsigned char BUSY1 = 0;
+  22          unsigned char CK1Num = 0;
+  23          volatile unsigned char GetDataBuf1[100] = '\0';
+  24          
+  25          void ChuankouIOInit(void)
+  26          {
+  27   1        P1M0 &= ~(1 << 0); //ÊäÈë
+  28   1        P1M1 |= (1 << 0);  //ÊäÈë
+  29   1      
+  30   1        P3M0 &= ~(1 << 0); //ÊäÈë
+  31   1        P3M1 |= (1 << 0);  //ÊäÈë
+  32   1      
+  33   1        P1M0 |= (1 << 1);
+  34   1        P1M1 &= ~(1 << 1);
+  35   1      
+  36   1        P3M0 |= (1 << 1);
+  37   1        P3M1 &= ~(1 << 1);
+  38   1      }
+  39          
+  40          void USART1_Init(void)
+  41          {
+  42   1        SCON = 0X50;            //01010000£º01¹¤×÷·½Ê½1£¨¼´8Î»UART£¬²¨ÌØÂÊ¿É±ä£©£¬01ÔÊÐí´®ÐÐ½ÓÊÕ
+  43   1        T2L = (65536 - (F_CPU) / BAUD / 4); //ÉèÖÃ²¨ÌØÂÊÖØ×°Öµ
+  44   1        T2H = (65536 - (F_CPU) / BAUD / 4) >> 8;
+  45   1        AUXR |= 0X15; //¶¨Ê±Æ÷T2Îª²¨ÌØÂÊ·¢ÉúÆ÷£¬T2Îª1TÄ£Ê½£¬Æô¶¯¶¨Ê±Æ÷2
+  46   1        ES = 1;     //´®¿Ú1ÖÐ¶Ï¿ª
+  47   1        EA = 1;     //¿ª×ÜÖÐ¶Ï
+  48   1      }
+  49          
+  50          void SendData1(unsigned char dat)
+C51 COMPILER V9.01   CHUANKOU                                                              06/19/2020 12:28:52 PAGE 2   
+
+  51          {
+  52   1        while (BUSY1)
+  53   1          ;
+  54   1        SBUF = dat;
+  55   1        BUSY1 = 1;
+  56   1      }
+  57          
+  58          void SendStr1(unsigned char *s1)
+  59          {
+  60   1        while (*s1)
+  61   1        {
+  62   2          SendData1(*s1++);
+  63   2        }
+  64   1      }
+  65          
+  66          void Uart1_Isr() interrupt 4 //using 0
+  67          {
+  68   1        unsigned char a;
+  69   1        if (RI)
+  70   1        {
+  71   2          RI = 0;
+  72   2          a = SBUF;
+  73   2          if (a < 128) //Ö»½ÓÊÕ×Ö·û´®,±ÜÃâÂÒÂë
+  74   2          {
+  75   3            if (a == '\r')
+  76   3              return;
+  77   3            if (a == '\n')
+  78   3            {
+  79   4              GetDataBuf1[CK1Num] = '\0';
+  80   4              CK1Num = 0;
+  81   4              if (strcmp(GetDataBuf1, "OK") == 0)
+  82   4              {
+  83   5                GetFlag1 = 1;
+  84   5              }
+  85   4              else if (strcmp(GetDataBuf1, "+CREG: 1") == 0)
+  86   4              {
+  87   5                GetFlag2 = 1;
+  88   5              }
+  89   4            }
+  90   3            else
+  91   3            {
+  92   4              GetDataBuf1[CK1Num++] = a;
+  93   4              if (GetDataBuf1[0] == '>' && GetDataBuf1[1] == ' ')
+  94   4              {
+  95   5                GetFlag3 = 1;
+  96   5              }
+  97   4            }
+  98   3          }
+  99   2        }
+ 100   1        if (TI)
+ 101   1        {
+ 102   2          TI = 0;
+ 103   2          BUSY1 = 0;
+ 104   2        }
+ 105   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    331    ----
+   CONSTANT SIZE    =     12    ----
+   XDATA SIZE       =    105       4
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.01   CHUANKOU                                                              06/19/2020 12:28:52 PAGE 3   
+
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

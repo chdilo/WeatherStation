@@ -1,0 +1,235 @@
+C51 COMPILER V9.01   SENDMESSAGE                                                           06/19/2020 12:28:53 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE SENDMESSAGE
+OBJECT MODULE PLACED IN .\sendmessage.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\hardware\sendmessage\sendmessage.c LARGE OPTIMIZE(7,SPEED) BROWSE INC
+                    -DIR(..\hardware\setphone;..\hardware\flash;..\hardware\huanjing;..\hardware\sendmessage;..\hardware\touch_main;..\main;.
+                    -.\system\bin;..\system\delay;..\system\iic;..\system\interrupt;..\system\stc;..\tft_touch_sd\font;..\tft_touch_sd\touch;
+                    -..\tft_touch_sd\tft;..\tft_touch_sd\txt;..\hardware\chuankou;..\hardware\zhuce;..\hardware\init) DEBUG OBJECTEXTEND PRIN
+                    -T(.\sendmessage.lst) TABS(2) OBJECT(.\sendmessage.obj)
+
+line level    source
+
+   1          #include <stdio.h>
+   2          #include "delay.h"
+   3          #include "sendmessage.h"
+   4          #include "tft.h"
+   5          #include "txt.h"
+   6          #include "touch.h"
+   7          #include "huanjing.h"
+   8          #include "setphone.h"
+   9          #include "chuankou.h"
+  10          
+  11          #define BACK_COLOR 0xC638
+  12          #define BUTTON_COLOR 0x3CDA
+  13          #define BUTTON_EDGE_COLOR 0x226E
+  14          #define BUTTON_FONT_COLOR WHITE
+  15          #define BUTTON_ON_COLOR 0x33D4
+  16          #define SENDING_COLOR 0xED84
+  17          #define FAIL_COLOR 0xA0A6
+  18          #define OK_COLOR 0x7546
+  19          #define INFO_COLOR 0x0397
+  20          
+  21          /*******************************************短信发送******************************************************
+             -*/
+  22          unsigned char touchNum = 0;
+  23          unsigned char Message[45];
+  24          unsigned char Number[24];
+  25          void SendMessageFrame(void)
+  26          {
+  27   1        TFT_ClearArea(0, 16, 240, 320 - 16, BACK_COLOR); //清空显示区
+  28   1      
+  29   1        LCD_DrawRectangle(17, 20, 222, 70, BUTTON_EDGE_COLOR);
+  30   1        LCD_DrawRectangle(17, 75, 222, 125, BUTTON_EDGE_COLOR);
+  31   1        LCD_DrawBox(18, 21, 204, 49, BUTTON_COLOR);
+  32   1        LCD_DrawBox(18, 76, 204, 49, BUTTON_COLOR);
+  33   1      
+  34   1        TFT_ShowString(11, 2, "Reflash", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  35   1        TFT_ShowString(7, 6, "Send message", BUTTON_FONT_COLOR, BUTTON_COLOR);
+  36   1      
+  37   1        TFT_ShowString_W25(2, 8, 2, "当前信息内容：", BLACK, BACK_COLOR);
+  38   1        TFT_ShowString_W25(2, 11, 2, "当前光照强度：", BLACK, BACK_COLOR);
+  39   1        TFT_ShowString_W25(2, 13, 2, "当前温度：", BLACK, BACK_COLOR);
+  40   1        TFT_ShowString_W25(2, 15, 2, "当前湿度：", BLACK, BACK_COLOR);
+  41   1        TFT_ShowString_W25(2, 17, 2, "短信发送至：", BLACK, BACK_COLOR);
+  42   1        TFT_ShowString(2, 18, PhoneNumber, INFO_COLOR, BACK_COLOR);
+  43   1        TFT_ShowString_W25(0, 19, 2, "主界面", BLACK, WHITE);
+  44   1      }
+  45          
+  46          void Reflash(void)
+  47          {
+  48   1        BH1750();
+  49   1        DH11GetHumiture();
+  50   1        sprintf(Message, "%s%s%s%s%s%s", "illuminance:", DispBuf, ",temperature:", humitureT, ",humidity:", humit
+C51 COMPILER V9.01   SENDMESSAGE                                                           06/19/2020 12:28:53 PAGE 2   
+
+             -ureH);
+  51   1        TFT_ShowString(2, 9, Message, INFO_COLOR, BACK_COLOR);
+  52   1        TFT_ShowString(2, 12, DispBuf, INFO_COLOR, BACK_COLOR);
+  53   1        TFT_ShowString(2, 14, humitureT, INFO_COLOR, BACK_COLOR);
+  54   1        TFT_ShowString(2, 16, humitureH, INFO_COLOR, BACK_COLOR);
+  55   1      }
+  56          
+  57          void FailSend(void)
+  58          {
+  59   1        LCD_DrawBox(18, 76, 204, 49, FAIL_COLOR);
+  60   1        TFT_ShowString_W25(7, 6, 2, "发送失败", WHITE, FAIL_COLOR);
+  61   1        delayms(2000);
+  62   1      }
+  63          
+  64          void SendMessage(void)
+  65          {
+  66   1        unsigned int i = 0;
+  67   1        unsigned int ms = 300;
+  68   1        LCD_DrawBox(18, 76, 204, 49, SENDING_COLOR);
+  69   1        TFT_ShowString(7, 6, "Send message", WHITE, SENDING_COLOR);
+  70   1        sprintf(Number, "%s%s%s", "AT+CMGS=\"", PhoneNumber, "\"\r\n");
+  71   1      
+  72   1        GetFlag1 = 0;
+  73   1        SendStr1("AT+CMGF=1\r\n");
+  74   1        while (GetFlag1 != 1)
+  75   1        {
+  76   2          delayms(100);
+  77   2          if (i++ > ms)
+  78   2          {
+  79   3            FailSend();
+  80   3            return;
+  81   3          }
+  82   2        }
+  83   1        GetFlag1 = 0;
+  84   1        LCD_DrawBox(18, 76, 204, 49, SENDING_COLOR);
+  85   1        TFT_ShowString_W25(7, 6, 2, "定义文本", WHITE, SENDING_COLOR);
+  86   1      
+  87   1        SendStr1("AT+CSCS=\"GSM\"\r\n");
+  88   1        while (GetFlag1 != 1)
+  89   1        {
+  90   2          delayms(100);
+  91   2          if (i++ > ms)
+  92   2          {
+  93   3            FailSend();
+  94   3            return;
+  95   3          }
+  96   2        }
+  97   1        GetFlag1 = 0;
+  98   1        LCD_DrawBox(18, 76, 204, 49, SENDING_COLOR);
+  99   1        TFT_ShowString_W25(7, 6, 2, "输入号码", WHITE, SENDING_COLOR);
+ 100   1      
+ 101   1        GetFlag3 = 0;
+ 102   1        SendStr1(Number);
+ 103   1        while (GetFlag3 != 1)
+ 104   1        {
+ 105   2          delayms(100);
+ 106   2          if (i++ > ms)
+ 107   2          {
+ 108   3            FailSend();
+ 109   3            return;
+ 110   3          }
+ 111   2        }
+C51 COMPILER V9.01   SENDMESSAGE                                                           06/19/2020 12:28:53 PAGE 3   
+
+ 112   1        GetFlag3 = 0;
+ 113   1        LCD_DrawBox(18, 76, 204, 49, SENDING_COLOR);
+ 114   1        TFT_ShowString_W25(7, 6, 2, "发送中", WHITE, SENDING_COLOR);
+ 115   1      
+ 116   1        SendStr1(Message);
+ 117   1        SendStr1("\x1A");
+ 118   1        while (GetFlag1 != 1)
+ 119   1        {
+ 120   2          delayms(100);
+ 121   2          if (i++ > ms)
+ 122   2          {
+ 123   3            FailSend();
+ 124   3            return;
+ 125   3          }
+ 126   2        }
+ 127   1        GetFlag1 = 0;
+ 128   1        LCD_DrawBox(18, 76, 204, 49, OK_COLOR);
+ 129   1        TFT_ShowString(7, 6, "OK!", WHITE, OK_COLOR);
+ 130   1        delayms(2000);
+ 131   1      }
+ 132          
+ 133          void SendMessageTouch(void)
+ 134          {
+ 135   1        HuanjingIOInit();
+ 136   1        Init_BH1750();
+ 137   1        SendMessageFrame();
+ 138   1        Reflash();
+ 139   1        while (1)
+ 140   1        {
+ 141   2          while (1)
+ 142   2          {
+ 143   3            if (!Touch_IRQ())
+ 144   3            {
+ 145   4              if (Convert_Pos()) //得到坐标值
+ 146   4              {
+ 147   5                touchNum = 0;
+ 148   5                if (17 < tp_pixlcd.x && tp_pixlcd.x < 222)
+ 149   5                {
+ 150   6                  if (20 < tp_pixlcd.y && tp_pixlcd.y < 70) //Reflash区
+ 151   6                  {
+ 152   7                    touchNum = 1;
+ 153   7                  }
+ 154   6                  else if (75 < tp_pixlcd.y && tp_pixlcd.y < 125) //Send message区
+ 155   6                  {
+ 156   7                    touchNum = 2;
+ 157   7                  }
+ 158   6                }
+ 159   5                if (tp_pixlcd.x < 48 && tp_pixlcd.y > 298) //下标签栏"主界面"
+ 160   5                {
+ 161   6                  TFT_ShowString_W25(0, 19, 2, "主界面", WHITE, BLUE);
+ 162   6                  return;
+ 163   6                }
+ 164   5                if (touchNum == 1)
+ 165   5                {
+ 166   6                  LCD_DrawBox(18, 21, 204, 49, BUTTON_ON_COLOR);
+ 167   6                  TFT_ShowString(11, 2, "Reflash", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+ 168   6                  break;
+ 169   6                }
+ 170   5                else if (touchNum == 2)
+ 171   5                {
+ 172   6                  LCD_DrawBox(18, 76, 204, 49, BUTTON_ON_COLOR);
+ 173   6                  TFT_ShowString(7, 6, "Send message", BUTTON_FONT_COLOR, BUTTON_ON_COLOR);
+C51 COMPILER V9.01   SENDMESSAGE                                                           06/19/2020 12:28:53 PAGE 4   
+
+ 174   6                  break;
+ 175   6                }
+ 176   5              }
+ 177   4            }
+ 178   3          }
+ 179   2          while (!Touch_IRQ())
+ 180   2            ; //等待触摸松开
+ 181   2      
+ 182   2          switch (touchNum)
+ 183   2          {
+ 184   3          case 1:
+ 185   3          {
+ 186   4            Reflash();
+ 187   4            LCD_DrawBox(18, 21, 204, 49, BUTTON_COLOR);
+ 188   4            TFT_ShowString(11, 2, "Reflash", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 189   4            break;
+ 190   4          }
+ 191   3          case 2:
+ 192   3          {
+ 193   4            SendMessage();
+ 194   4            LCD_DrawBox(18, 76, 204, 49, BUTTON_COLOR);
+ 195   4            TFT_ShowString(7, 6, "Send message", BUTTON_FONT_COLOR, BUTTON_COLOR);
+ 196   4            break;
+ 197   4          }
+ 198   3          }
+ 199   2        }
+ 200   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2010    ----
+   CONSTANT SIZE    =    233    ----
+   XDATA SIZE       =     70       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
