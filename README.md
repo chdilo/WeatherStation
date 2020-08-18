@@ -3,6 +3,10 @@
 
 工程文件目录：STC_系统/project
 
+实验设备：移动终端口袋实验室
+
+![20200818114853.jpg](https://raw.githubusercontent.com/chdilo/pictures/master/img/20200818114853.jpg)
+
 开机入网界面：
 
 ![image-20200817231810188](https://raw.githubusercontent.com/chdilo/pictures/master/img/20200817231810.png)
