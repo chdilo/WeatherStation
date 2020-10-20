@@ -1,11 +1,12 @@
 # WeatherStation
+
 课设-通信电子系统设计-简易气象站
 
-工程文件目录：STC_系统/project
+工程文件目录：STC\_系统/project
 
 实验设备：移动终端口袋实验室
 
-无法加载图片的话，在hosts文件中添加`199.232.68.133 raw.githubusercontent.com`，或[点这里](https://gitee.com/chdilo/WeatherStation "Gitee")
+无法加载图片的话，在 hosts 文件中添加`199.232.68.133 raw.githubusercontent.com`，或[点这里](https://gitee.com/chdilo/WeatherStation "Gitee")
 
 ![20200818114853.jpg](https://raw.githubusercontent.com/chdilo/pictures/master/img/20200818114853.jpg)
 
